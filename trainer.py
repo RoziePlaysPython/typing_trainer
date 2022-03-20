@@ -4,56 +4,67 @@ import random
 
 class trainer:
     def __init__(self, screen):
+        self.screen = screen
         curses.noecho()
         curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
         curses.init_pair(2, curses.COLOR_RED, curses.COLOR_BLACK)
         curses.init_pair(3, curses.COLOR_MAGENTA, curses.COLOR_BLACK)
-        color_default = curses.color_pair(1)
-        color_wrong = curses.color_pair(2) | curses.A_UNDERLINE
-        color_special = curses.color_pair(3) | curses.A_BOLD
+        self.color_default = curses.color_pair(1)
+        self.color_wrong = curses.color_pair(2) | curses.A_UNDERLINE
+        self.color_special = curses.color_pair(3) | curses.A_BOLD
 
-        self.screen = screen
         self.startX = 7
         self.startY = 3
-        self.path = 'words.txt'
-        self.string = self.get_string()
-        self.screen.clear()
-        self.screen.addstr(self.startY, self.startX, self.string, color_default)
-        self.screen.refresh()
-        key = self.screen.getch()
-        self.written_string = ''
-        while chr(key) != '' and self.written_string != self.string:
-            self.screen.clear()
-            self.written_string = self.string_written(self.written_string, key)
-            self.correct_string = self.string_correct(self.written_string, self.string)
-            self.screen.addstr(self.startY, self.startX, self.string, color_default)
-            self.screen.addstr(self.startY, self.startX, self.written_string, color_wrong)
-            self.screen.addstr(self.startY, self.startX, self.correct_string, color_special)
-            key = self.screen.getch()
-            self.screen.refresh()
-    
-    def get_string(self):
-        with open(self.path) as word_file:
-            words = word_file.read().split('\n')
-            string = random.choice(words[:len(words)-1])
-        return string
-
-    def string_written(self, string, key):
-        if chr(key) == 'ć':
-            string = string[:len(string)-1]
-            return string
-        if chr(key) == '\n':
-            return string
-        string = string+chr(key)
-        return string
-
-    def string_correct(self, string, correct_string):
-        for letter in range(len(string)):
-            if string[letter] == correct_string[letter]:
-                pass
-            else:
-                return string[:letter]
-        return string[:letter+1]
+        path = 'words.txt'
+        self.string = self.get_string(path)
+        self.string_len = len(self.string)
+        self.written = ''
+        self.render_text()
         
+        key = self.screen.getch()
+        run = chr(key) != '\n'
+        while run:
+            backspace_pressed = 0
+            self.screen.clear()
+            if key == 263 and len(self.written)>0:
+                self.written = self.written[:len(self.written)-1]
+                backspace_pressed =1
+            if key == 263 and len(self.written)<=0:
+                backspace_pressed =1
+            if chr(key) == '\n':
+                run = 0
+                break
+            elif not backspace_pressed:
+                self.written += chr(key)
+            self.render_text(key)
+            self.screen.addstr(0, 0, f'{key} {chr(key)} {self.written}')
+            self.screen.refresh()
+            key = self.screen.getch()
+
+    def get_string(self, path):
+        with open(path) as file:
+            text = file.read().split('\n')
+            text = text[:len(text)-1]
+        return random.choice(text)
+
+    def render_text(self, key=None):
+        if key==None:
+            for pxl in range(self.string_len):
+                self.screen.addch(self.startY, self.startX+pxl, self.string[pxl], self.color_default)
+        else:
+            for pxl in range(max(self.string_len, len(self.written))):
+                color = self.color_default
+                try:
+                    if self.written[pxl] == self.string[pxl]:
+                        color = self.color_special
+                    else:
+                        color = self.color_wrong
+                except IndexError:
+                    color = self.color_default
+                try:
+                    self.screen.addch(self.startY, self.startX+pxl, self.string[pxl], color)
+                except IndexError:
+                    color = self.color_wrong
+                    self.screen.addch(self.startY, self.startX+pxl, self.written[pxl], color)
 
 curses.wrapper(trainer)
