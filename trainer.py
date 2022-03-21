@@ -3,7 +3,7 @@ import time
 import random
 
 class trainer:
-    def __init__(self, screen):
+    def __init__(self, screen, path = 'words.txt'):
         self.screen = screen
         curses.noecho()
         curses.init_pair(1, curses.COLOR_GREEN, curses.COLOR_BLACK)
@@ -15,15 +15,18 @@ class trainer:
 
         self.startX = 7
         self.startY = 3
-        path = 'words.txt'
         self.string = self.get_string(path)
         self.string_len = len(self.string)
         self.written = ''
         self.render_text()
+        self.timerow = []
         
+        self.timestamp1 = time.time()
         key = self.screen.getch()
         run = chr(key) != '\n'
-        while run:
+        while run and self.written!=self.string:
+            self.timestamp2 = time.time()
+            self.timerow.append(self.timestamp2-self.timestamp1)
             backspace_pressed = 0
             self.screen.clear()
             if key == 263 and len(self.written)>0:
@@ -36,10 +39,17 @@ class trainer:
                 break
             elif not backspace_pressed:
                 self.written += chr(key)
-            self.render_text(key)
+            self.render_text()
             self.screen.addstr(0, 0, f'{key} {chr(key)} {self.written}')
             self.screen.refresh()
+            self.timestamp1 = time.time()
             key = self.screen.getch()
+        self.screen.clear()
+        cpm = (len(self.string) / sum(self.timerow))*60
+        wpm = cpm//5
+        self.screen.addstr(0,0, f'cpm: {cpm}, wpm: {wpm}')
+        self.screen.refresh()
+        self.screen.getch()
 
     def get_string(self, path):
         with open(path) as file:
@@ -47,24 +57,28 @@ class trainer:
             text = text[:len(text)-1]
         return random.choice(text)
 
-    def render_text(self, key=None):
-        if key==None:
-            for pxl in range(self.string_len):
-                self.screen.addch(self.startY, self.startX+pxl, self.string[pxl], self.color_default)
-        else:
-            for pxl in range(max(self.string_len, len(self.written))):
-                color = self.color_default
-                try:
-                    if self.written[pxl] == self.string[pxl]:
-                        color = self.color_special
-                    else:
-                        color = self.color_wrong
-                except IndexError:
-                    color = self.color_default
-                try:
-                    self.screen.addch(self.startY, self.startX+pxl, self.string[pxl], color)
-                except IndexError:
+    #Function that loops through all existing characers and prints them with their correct colors
+    def render_text(self):
+        for pxl in range(max(self.string_len, len(self.written))):
+            color = self.color_default
+            try:
+                if self.written[pxl] == self.string[pxl]:
+                    color = self.color_special
+                else:
                     color = self.color_wrong
-                    self.screen.addch(self.startY, self.startX+pxl, self.written[pxl], color)
+            except IndexError:
+                color = self.color_default
+            
+            # A bad piece of code, that handles case when self.written is longer than self.string
+            try:
+                self.screen.addch(self.startY, self.startX+pxl, self.string[pxl], color)
+            except IndexError:
+                color = self.color_wrong
+                self.screen.addch(self.startY, self.startX+pxl, self.written[pxl], color)
 
-curses.wrapper(trainer)
+if __name__ == '__main__':
+    from sys import argv
+    if len(argv) > 1:
+        curses.wrapper(trainer, argv[1])
+    else:
+        curses.wrapper(trainer)
