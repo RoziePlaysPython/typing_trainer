@@ -22,28 +22,29 @@ class trainer:
         self.timerow = []
         
         self.timestamp1 = time.time()
-        key = self.screen.getch()
-        run = chr(key) != '\n'
+        key = self.screen.getkey()
+        run = key != '\n'
         while run and self.written!=self.string:
             self.timestamp2 = time.time()
             self.timerow.append(self.timestamp2-self.timestamp1)
             backspace_pressed = 0
             self.screen.clear()
-            if key == 263 and len(self.written)>0:
+            if key == 'KEY_BACKSPACE' and len(self.written)>0:
                 self.written = self.written[:len(self.written)-1]
                 backspace_pressed =1
-            if key == 263 and len(self.written)<=0:
+            if key == 'KEY_BACKSPACE' and len(self.written)<=0:
                 backspace_pressed =1
-            if chr(key) == '\n':
+            if key == '\n':
                 run = 0
                 break
             elif not backspace_pressed:
-                self.written += chr(key)
+                self.written += str(key)
             self.render_text()
-            self.screen.addstr(0, 0, f'{key} {chr(key)} {self.written}')
+            self.screen.addstr(0, 0, f'{self.written}')
+            self.screen.addstr(1, 0, f'{key}')
             self.screen.refresh()
             self.timestamp1 = time.time()
-            key = self.screen.getch()
+            key = self.screen.getkey()
         self.screen.clear()
         cpm = (len(self.string) / sum(self.timerow))*60
         wpm = cpm//5
