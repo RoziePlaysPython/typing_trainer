@@ -24,31 +24,39 @@ class trainer:
         self.timestamp1 = time.time()
         key = self.screen.getkey()
         run = key != '\n'
+        backspace_pressed = key == 'KEY_BACKSPACE'
         while run and self.written!=self.string:
             self.timestamp2 = time.time()
-            self.timerow.append(self.timestamp2-self.timestamp1)
+            if not backspace_pressed:
+                self.timerow.append(self.timestamp2-self.timestamp1)
+            if backspace_pressed and len(self.timerow) > 0:
+                self.timerow = self.timerow[:len(self.timerow) - 1]
             backspace_pressed = 0
             self.screen.clear()
-            if key == 'KEY_BACKSPACE' and len(self.written)>0:
-                self.written = self.written[:len(self.written)-1]
-                backspace_pressed =1
-            if key == 'KEY_BACKSPACE' and len(self.written)<=0:
-                backspace_pressed =1
+            if key == 'KEY_BACKSPACE' and len(self.written) > 0:
+                self.written = self.written[:len(self.written) - 1]
+                backspace_pressed = 1
+            if key == 'KEY_BACKSPACE' and len(self.written) <= 0:
+                backspace_pressed = 1
             if key == '\n':
                 run = 0
                 break
             elif not backspace_pressed:
                 self.written += str(key)
+
             self.render_text()
-            self.screen.addstr(0, 0, f'{self.written}')
-            self.screen.addstr(1, 0, f'{key}')
+            self.screen.addstr(0, self.startX, f'{self.written}')
             self.screen.refresh()
             self.timestamp1 = time.time()
             key = self.screen.getkey()
+        self.show_finish_screen()
+
+    def show_finish_screen(self):
         self.screen.clear()
         cpm = round((len(self.string) / sum(self.timerow))*60, 2)
         wpm = round(cpm/5, 2)
         self.screen.addstr(0,0, f'cpm: {cpm}, wpm: {wpm}')
+        self.screen.addstr(self.startY-1, self.startX, f'{self.string}', self.color_special)
         self.render_graph()
         self.screen.refresh()
         self.screen.getch()
@@ -88,7 +96,7 @@ class trainer:
                 if norm_time<=0:
                     self.screen.addch(self.startY + graph_Y, self.startX + idx_time_stat, '█', self.color_special)
                 else:
-                    self.screen.addch(self.startY + graph_Y, self.startX + idx_time_stat, '_', self.color_wrong)
+                    self.screen.addch(self.startY + graph_Y, self.startX + idx_time_stat, '┼', self.color_default)
 
 
 if __name__ == '__main__':
