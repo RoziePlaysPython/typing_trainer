@@ -46,9 +46,10 @@ class trainer:
             self.timestamp1 = time.time()
             key = self.screen.getkey()
         self.screen.clear()
-        cpm = (len(self.string) / sum(self.timerow))*60
-        wpm = cpm//5
+        cpm = round((len(self.string) / sum(self.timerow))*60, 2)
+        wpm = round(cpm/5, 2)
         self.screen.addstr(0,0, f'cpm: {cpm}, wpm: {wpm}')
+        self.render_graph()
         self.screen.refresh()
         self.screen.getch()
 
@@ -76,6 +77,19 @@ class trainer:
             except IndexError:
                 color = self.color_wrong
                 self.screen.addch(self.startY, self.startX+pxl, self.written[pxl], color)
+
+    def render_graph(self):
+        max_value = max(self.timerow)*100
+        step = max_value/10
+        for idx_time_stat in range(len(self.timerow)):
+            norm_time = self.timerow[idx_time_stat]*100
+            for graph_Y in range(10):
+                norm_time = norm_time - step
+                if norm_time<=0:
+                    self.screen.addch(self.startY + graph_Y, self.startX + idx_time_stat, '█', self.color_special)
+                else:
+                    self.screen.addch(self.startY + graph_Y, self.startX + idx_time_stat, '_', self.color_wrong)
+
 
 if __name__ == '__main__':
     from sys import argv
