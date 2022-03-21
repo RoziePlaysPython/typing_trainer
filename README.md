@@ -12,3 +12,8 @@ You can specify another file to read from by adding its path as an argument:
 
 Or you can run it with default settings: 
 `python3 trainer.py`
+## Known bugs:
+- May not work in other terminals, because codes for backspace and enter are different in different terminals
+- - works in kitty
+- - doesn't work in xterm-256colors
+- Long strings may cause crash if they are longer, than available space
